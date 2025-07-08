@@ -27,9 +27,8 @@ Temporary Items
 # Personal sensitive data
 dataset/
 
-# Machine learning models
-*.h5
-*.ckpt
-*.pth
-*.pt
-*.keras
+# Virtual environments
+.venv/
+
+# cache
+.mypy_cache/

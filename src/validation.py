@@ -1,6 +1,7 @@
 import tensorflow as tf
 from tensorflow.keras.models import load_model
 import os
+import platform
 
 # === Configurazione ===
 VALIDATION_DIR = "dataset/validation"  # Percorso del dataset di validazione
@@ -22,6 +23,16 @@ validation_ds = tf.keras.utils.image_dataset_from_directory(
 if not os.path.exists(MODEL_PATH):
     raise FileNotFoundError(f"Modello non trovato: {MODEL_PATH}")
 model = load_model(MODEL_PATH)  # Carica il modello pre-addestrato
+
+# === (Opzionale) Se vuoi ricompilare il modello per ulteriori valutazioni/addestramenti ===
+if platform.machine() in ["arm64", "arm"]:
+    from tensorflow.keras.optimizers.legacy import Adam
+    optimizer = Adam(learning_rate=1e-3)
+else:
+    from tensorflow.keras.optimizers import Adam
+    optimizer = Adam(learning_rate=1e-3)
+model.compile(optimizer=optimizer,
+              loss='categorical_crossentropy', metrics=['accuracy'])
 
 # === Valutazione del modello sul dataset di validazione ===
 loss, accuracy = model.evaluate(validation_ds)

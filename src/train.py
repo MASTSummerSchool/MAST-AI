@@ -1,6 +1,7 @@
 import tensorflow as tf
 from tensorflow.keras.applications import MobileNetV3Small
 from tensorflow.keras import layers, models, optimizers
+import platform
 
 # === Configurazione iniziale ===
 DATA_DIR = "dataset/train"  # Percorso del dataset di addestramento
@@ -8,7 +9,8 @@ IMG_SIZE = (224, 224)  # Dimensione delle immagini di input
 BATCH_SIZE = 256  # Numero di immagini per batch
 EPOCHS = 10  # Numero di epoche per l'addestramento
 # Percorso dove verrà salvato il modello finale
-MODEL_PATH = "models/mobilenet_NOME_v1.h5"  # Estensione .h5 per compatibilità TF 2.11
+# Estensione .h5 per compatibilità TF 2.11
+MODEL_PATH = "models/mobilenet_NOME_v1.h5"
 
 # === Caricamento dataset ===
 train_ds = tf.keras.utils.image_dataset_from_directory(
@@ -51,13 +53,20 @@ outputs = layers.Dense(num_classes, activation='softmax')(
     x)  # Layer di output con attivazione softmax
 model = models.Model(inputs, outputs)  # Crea il modello finale
 
+# === Selezione ottimizzatore in base all'architettura ===
+if platform.machine() in ["arm64", "arm"]:
+    # Mac M1/M2: usa legacy Adam per evitare lentezza
+    from tensorflow.keras.optimizers.legacy import Adam
+    optimizer = Adam(learning_rate=1e-3)
+else:
+    # Altre architetture: usa Adam standard
+    from tensorflow.keras.optimizers import Adam
+    optimizer = Adam(learning_rate=1e-3)
+
 # === Compilazione del modello ===
 model.compile(
-    # Ottimizzatore Adam con un tasso di apprendimento di 0.001
-    optimizer=optimizers.Adam(learning_rate=1e-3),
-    # Funzione di perdita per la classificazione multi-classe
+    optimizer=optimizer,
     loss='categorical_crossentropy',
-    # Metriche da monitorare durante l'addestramento (accuratezza)
     metrics=['accuracy']
 )
 
