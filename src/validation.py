@@ -1,11 +1,12 @@
 import tensorflow as tf
 from tensorflow.keras.models import load_model
+import os
 
 # === Configurazione ===
 VALIDATION_DIR = "dataset/validation"  # Percorso del dataset di validazione
 IMG_SIZE = (224, 224)  # Dimensione delle immagini di input
 BATCH_SIZE = 1  # Dimensione del batch
-MODEL_PATH = "mobilenet_NOME_v1.keras"  # Percorso del modello salvato
+MODEL_PATH = "models/mobilenet_NOME_v1.h5"  # Percorso del modello salvato
 
 # === Caricamento dataset di validazione ===
 validation_ds = tf.keras.utils.image_dataset_from_directory(
@@ -17,7 +18,9 @@ validation_ds = tf.keras.utils.image_dataset_from_directory(
     shuffle=False  # Non mescolare, per valutare correttamente
 )
 
-# === Caricamento del modello salvato ===
+# === Controllo e caricamento del modello salvato ===
+if not os.path.exists(MODEL_PATH):
+    raise FileNotFoundError(f"Modello non trovato: {MODEL_PATH}")
 model = load_model(MODEL_PATH)  # Carica il modello pre-addestrato
 
 # === Valutazione del modello sul dataset di validazione ===

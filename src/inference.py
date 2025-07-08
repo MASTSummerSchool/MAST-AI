@@ -5,7 +5,7 @@ from tensorflow.keras.preprocessing.image import load_img, img_to_array
 import os
 
 # === Configurazione ===
-MODEL_PATH = "mobilenet_NOME_v1.keras"  # Percorso del modello salvato
+MODEL_PATH = "models/mobilenet_NOME_v1.h5"  # Percorso del modello salvato
 IMG_SIZE = (224, 224)  # Dimensione dell'immagine di input
 CLASS_NAMES = [
     "aqualy", "calcolatrice_casio", "bicchiere", "iphone13", "mouse_wireless",
@@ -32,7 +32,8 @@ def predict_image(img_path):
     img_array = img_to_array(img)
     # Aggiungi la dimensione del batch (1, IMG_SIZE, IMG_SIZE, 3)
     img_array = np.expand_dims(img_array, axis=0)
-    img_array = tf.keras.applications.mobilenet_v3.preprocess_input(img_array)  # Preprocessing MobileNetV3
+    img_array = tf.keras.applications.mobilenet_v3.preprocess_input(
+        img_array)  # Preprocessing MobileNetV3
 
     # Previsione con il modello
     predictions = model.predict(img_array)

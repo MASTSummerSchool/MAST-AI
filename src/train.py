@@ -8,7 +8,7 @@ IMG_SIZE = (224, 224)  # Dimensione delle immagini di input
 BATCH_SIZE = 256  # Numero di immagini per batch
 EPOCHS = 10  # Numero di epoche per l'addestramento
 # Percorso dove verrà salvato il modello finale
-MODEL_PATH = "mobilenet_NOME_v1.keras"
+MODEL_PATH = "models/mobilenet_NOME_v1.h5"  # Estensione .h5 per compatibilità TF 2.11
 
 # === Caricamento dataset ===
 train_ds = tf.keras.utils.image_dataset_from_directory(
@@ -68,5 +68,5 @@ model.fit(
 )
 
 # === Salvataggio del modello ===
-model.save(MODEL_PATH)  # Salva il modello addestrato nel percorso specificato
+model.save(MODEL_PATH, save_format="h5")  # Salva in formato HDF5
 print(f"Modello salvato in {MODEL_PATH}")  # Messaggio di conferma
