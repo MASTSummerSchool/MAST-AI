@@ -1,3 +1,4 @@
+from tensorflow.keras.callbacks import EarlyStopping
 import tensorflow as tf
 from tensorflow.keras.applications import MobileNetV3Small
 from tensorflow.keras import layers, models, optimizers
@@ -6,11 +7,11 @@ import platform
 # === Configurazione iniziale ===
 DATA_DIR = "dataset/train"  # Percorso del dataset di addestramento
 IMG_SIZE = (224, 224)  # Dimensione delle immagini di input
-BATCH_SIZE = 256  # Numero di immagini per batch
+BATCH_SIZE = 32  # Numero di immagini per batch
 EPOCHS = 10  # Numero di epoche per l'addestramento
 # Percorso dove verrà salvato il modello finale
 # Estensione .h5 per compatibilità TF 2.11
-MODEL_PATH = "models/mobilenet_NOME_v1.h5"
+MODEL_PATH = "models/mobilenet_NOME_v3.h5"
 
 # === Caricamento dataset ===
 train_ds = tf.keras.utils.image_dataset_from_directory(
@@ -32,50 +33,52 @@ data_augmentation = tf.keras.Sequential([
     layers.RandomContrast(0.2),  # Contrasto casuale tra -20% e +20%
 ])
 
-# === Costruzione del modello ===
-inputs = layers.Input(shape=IMG_SIZE + (3,))  # Layer di input per immagini RGB
-x = data_augmentation(inputs)  # Applica data augmentation
-x = tf.keras.applications.mobilenet_v3.preprocess_input(
-    x)  # Preprocessa l'input per MobileNetV3
+# === Costruzione del modello base ===
+inputs = layers.Input(shape=IMG_SIZE + (3,))
+x = data_augmentation(inputs)
+x = tf.keras.applications.mobilenet_v3.preprocess_input(x)
 base_model = MobileNetV3Small(
-    input_shape=IMG_SIZE + (3,),  # Dimensione delle immagini in input
-    include_top=False,  # Esclude il classificatore finale
-    weights='imagenet',  # Usa i pesi pre-addestrati su ImageNet
-    pooling='avg'  # Usa la media globale delle caratteristiche
+    input_shape=IMG_SIZE + (3,),
+    include_top=False,
+    weights='imagenet',
+    pooling='avg'
 )
-base_model.trainable = False  # Congela i pesi del modello base
-x = base_model(x, training=False)  # Passa l'input attraverso il modello base
-# Aggiungi un layer denso con 128 neuroni e ReLU
-x = layers.Dense(128, activation='relu')(x)
-# Aggiungi un layer di Dropout per prevenire overfitting
-x = layers.Dropout(0.5)(x)
-outputs = layers.Dense(num_classes, activation='softmax')(
-    x)  # Layer di output con attivazione softmax
-model = models.Model(inputs, outputs)  # Crea il modello finale
+base_model.trainable = False
+x = base_model(x, training=False)
+x = layers.Dense(192, activation='relu')(x)  # Miglior valore trovato
+x = layers.Dropout(0.3)(x)                   # Miglior valore trovato
+outputs = layers.Dense(num_classes, activation='softmax')(x)
+model = models.Model(inputs, outputs)
 
 # === Selezione ottimizzatore in base all'architettura ===
 if platform.machine() in ["arm64", "arm"]:
-    # Mac M1/M2: usa legacy Adam per evitare lentezza
     from tensorflow.keras.optimizers.legacy import Adam
-    optimizer = Adam(learning_rate=1e-3)
+    optimizer = Adam(learning_rate=0.0005)   # Miglior valore trovato
 else:
-    # Altre architetture: usa Adam standard
     from tensorflow.keras.optimizers import Adam
-    optimizer = Adam(learning_rate=1e-3)
+    optimizer = Adam(learning_rate=0.0005)
 
-# === Compilazione del modello ===
 model.compile(
     optimizer=optimizer,
     loss='categorical_crossentropy',
     metrics=['accuracy']
 )
 
-# === Addestramento del modello ===
-model.fit(
-    train_ds,  # Dataset di addestramento
-    epochs=EPOCHS  # Numero di epoche
+# === Addestramento testa (feature extraction) ===
+
+early_stopping = EarlyStopping(
+    monitor="loss",
+    patience=3,
+    restore_best_weights=True
+)
+
+history = model.fit(
+    train_ds,
+    epochs=EPOCHS,
+    validation_data=None,  # aggiungi val_ds se disponibile
+    callbacks=[early_stopping]
 )
 
 # === Salvataggio del modello ===
-model.save(MODEL_PATH, save_format="h5")  # Salva in formato HDF5
-print(f"Modello salvato in {MODEL_PATH}")  # Messaggio di conferma
+model.save(MODEL_PATH, save_format="h5")
+print(f"Modello salvato in {MODEL_PATH}")

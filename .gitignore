@@ -25,10 +25,15 @@ Temporary Items
 .apdisk
 
 # Personal sensitive data
-dataset/
+dataset/train/*
+dataset/validation/*
+dataset/test/*
 
 # Virtual environments
 .venv/
 
 # cache
 .mypy_cache/
+
+# Model tuning
+models/tuner_results/*
