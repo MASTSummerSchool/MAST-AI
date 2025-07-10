@@ -11,7 +11,7 @@ BATCH_SIZE = 32  # Numero di immagini per batch
 EPOCHS = 10  # Numero di epoche per l'addestramento
 # Percorso dove verrà salvato il modello finale
 # Estensione .h5 per compatibilità TF 2.11
-MODEL_PATH = "models/mobilenet_NOME_v3.h5"
+MODEL_PATH = "models/mobilenet_ft.h5"
 
 # === Caricamento dataset ===
 train_ds = tf.keras.utils.image_dataset_from_directory(
@@ -53,10 +53,10 @@ model = models.Model(inputs, outputs)
 # === Selezione ottimizzatore in base all'architettura ===
 if platform.machine() in ["arm64", "arm"]:
     from tensorflow.keras.optimizers.legacy import Adam
-    optimizer = Adam(learning_rate=0.0005)   # Miglior valore trovato
+    optimizer = Adam(learning_rate=0.00005)   # Miglior valore trovato
 else:
     from tensorflow.keras.optimizers import Adam
-    optimizer = Adam(learning_rate=0.0005)
+    optimizer = Adam(learning_rate=0.00005)
 
 model.compile(
     optimizer=optimizer,
